@@ -1,0 +1,7 @@
+.git
+.idea
+.DS_Store
+dong-common.iml
+dong-common-core/target
+dong-common-gateway/target
+dong-common-modules/target
