@@ -1,7 +1,8 @@
 package com.dong.common.core.utils;
 
+import cn.hutool.extra.spring.SpringUtil;
 import com.alibaba.fastjson.JSONObject;
-import com.dong.common.core.utils.spring.SpringUtil;
+import com.dong.common.core.utils.spring.SpringUtils;
 import com.dong.common.core.utils.transform.BeanConvert;
 
 import java.lang.reflect.ParameterizedType;
@@ -25,9 +26,9 @@ public class BaseTransfer<T> {
         this.data = data;
     }
 
-    @SuppressWarnings("unchecked")
+    /*@SuppressWarnings("unchecked")
     public BaseTransfer(){
-        Map<String, String> params = SpringUtil.parseFrom();
+        Map<String, String> params = SpringUtils.parseFrom();
         String jsonObject = JSONObject.toJSONString(params);
         Type type = this.getClass().getGenericSuperclass(); // generic 泛型
         //获得运行期的泛型类型
@@ -38,7 +39,7 @@ public class BaseTransfer<T> {
         // 获取数据的第一个元素(User.class)
         clazz = (Class<T>) types[0]; // com.oa.shore.entity.User.class
         this.setData(JSONObject.parseObject(jsonObject,clazz));
-    }
+    }*/
 
     @SuppressWarnings("unchecked")
     public static <S,T> T TtoS(S s,Class<T> t) {

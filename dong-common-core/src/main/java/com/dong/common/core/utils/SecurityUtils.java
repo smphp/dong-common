@@ -2,6 +2,7 @@ package com.dong.common.core.utils;
 
 import com.dong.common.core.constant.CacheConstants;
 import com.dong.common.core.text.Convert;
+import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,6 +37,9 @@ public class SecurityUtils
     {
         return getToken(ServletUtils.getRequest());
     }
+
+
+
 
     /**
      * 根据request获取请求token

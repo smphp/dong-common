@@ -10,12 +10,15 @@ import com.dong.common.core.utils.ServletUtils;
 import com.dong.common.core.utils.StringUtils;
 import com.dong.common.core.utils.ip.IpUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 
 /**
  * token验证处理
@@ -34,6 +37,7 @@ public class TokenService
 
     protected static final long MILLIS_SECOND = 1000;
 
+    public static final Long MILLIS_MINUTE_TEN = 20 * 60 * 1000L;
     /**
      * 创建令牌
      */
@@ -42,8 +46,8 @@ public class TokenService
         // 生成token
         String token = IdUtils.fastUUID();
         loginUser.setToken(token);
-        loginUser.setUserid(loginUser.getUsers().getUserId());
-        loginUser.setUsername(loginUser.getUsers().getUserName());
+        loginUser.setUserId(loginUser.getUser().getId());
+        loginUser.setUsername(loginUser.getUser().getUsername());
         loginUser.setIpaddr(IpUtils.getIpAddr(ServletUtils.getRequest()));
         refreshToken(loginUser);
 
@@ -139,6 +143,33 @@ public class TokenService
     }
 
     /**
-     * 获取用户信息
+     * 验证令牌有效期，相差不足20分钟，自动刷新缓存
+     *
+     * @param loginUser
+     * @return 令牌
      */
+    public void verifyToken(LoginUser loginUser)
+    {
+        long expireTime = loginUser.getExpireTime();
+        long currentTime = System.currentTimeMillis();
+        if (expireTime - currentTime <= MILLIS_MINUTE_TEN)
+        {
+            refreshToken(loginUser);
+        }
+    }
+    /**
+     * 获取请求token
+     *
+     * @param request
+     * @return token
+     */
+    public String getToken(HttpServletRequest request)
+    {
+        String token = request.getHeader(AUTHORIZATION);
+        if (StringUtils.isNotEmpty(token) && token.startsWith(Constants.TOKEN_PREFIX))
+        {
+            token = token.replace(Constants.TOKEN_PREFIX, "");
+        }
+        return token;
+    }
 }

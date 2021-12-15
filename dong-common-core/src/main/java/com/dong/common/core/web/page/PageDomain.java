@@ -1,16 +1,17 @@
 package com.dong.common.core.web.page;
 
+
 import com.dong.common.core.utils.StringUtils;
 
 /**
  * 分页数据
  * 
- * @author dong
+ * @author suihan
  */
-public class PageDomain
+public class PageDomain<T>
 {
     /** 当前记录起始索引 */
-    private Integer pageNum;
+    private Integer pageNo;
 
     /** 每页显示记录数 */
     private Integer pageSize;
@@ -30,14 +31,14 @@ public class PageDomain
         return StringUtils.toUnderScoreCase(orderByColumn) + " " + isAsc;
     }
 
-    public Integer getPageNum()
+    public Integer getPageNo()
     {
-        return pageNum;
+        return pageNo;
     }
 
-    public void setPageNum(Integer pageNum)
+    public void setPageNo(Integer pageNo)
     {
-        this.pageNum = pageNum;
+        this.pageNo = pageNo;
     }
 
     public Integer getPageSize()

@@ -1,5 +1,14 @@
 package com.dong.common.core.utils.spring;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.dong.common.core.constant.Constants;
+import com.dong.common.core.domain.UsersDetailDTO;
+import com.dong.common.core.exception.CustomException;
+import com.dong.common.core.exception.UtilException;
+import com.dong.common.core.service.RedisCache;
+import com.dong.common.core.service.TokenService;
+import com.dong.common.core.utils.JwtTokenUtil;
 import com.dong.common.core.utils.StringUtils;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.beans.BeansException;
@@ -17,9 +26,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * spring工具类 方便在非spring管理环境中获取bean
@@ -27,12 +33,85 @@ import java.util.Map;
  * @author wdzk
  */
 @Component
-public final class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextAware
+public final class SpringUtils implements BeanFactoryPostProcessor, ApplicationContextAware 
 {
     /** Spring应用上下文环境 */
     private static ConfigurableListableBeanFactory beanFactory;
 
     private static ApplicationContext applicationContext;
+
+
+
+    /**
+     * 判断当前是否是登录用户
+     * @return
+     */
+    public static boolean isLogin() {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        TokenService tokenService = applicationContext.getBean(TokenService.class);
+        RedisCache redisCache = applicationContext.getBean(RedisCache.class);
+        String bearers = tokenService.getToken(request);
+        String token = redisCache.getCacheObject(Constants.FRONTEND_LOGIN_TOKEN_KEY+bearers);
+        if (!StringUtils.isEmpty(token) && !StringUtils.isBlank(token)) {
+            String subject = null;
+            try {
+                subject = JwtTokenUtil.parseToken(token);
+            } catch (UtilException e) {
+                throw new UtilException(e);
+            }
+            if(subject==null){
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 获取当前用户信息
+     * @return
+     */
+    public static UsersDetailDTO getUserDetail() {
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        TokenService tokenService = applicationContext.getBean(TokenService.class);
+        RedisCache redisCache = applicationContext.getBean(RedisCache.class);
+        String bearers = tokenService.getToken(request);
+        String token = redisCache.getCacheObject(Constants.FRONTEND_LOGIN_TOKEN_KEY+bearers);
+        if (!StringUtils.isEmpty(token) && !StringUtils.isBlank(token)) {
+            String subject = null;
+            try {
+                subject = JwtTokenUtil.parseToken(token);
+            } catch (UtilException e) {
+                throw new UtilException(e);
+            }
+            if(subject==null){
+                throw new CustomException("用户未登录");
+            }
+            UsersDetailDTO usersDetailDTO = transfer(subject);
+            return usersDetailDTO;
+        }
+        throw new CustomException("用户未登录");
+    }
+
+    public static UsersDetailDTO transfer(String subject) {
+        if (subject == null)
+            return null;
+        UsersDetailDTO usersDetailDTO = new UsersDetailDTO();
+        JSONObject jsonObject = JSON.parseObject(subject);
+        if (jsonObject.get("email") != null)
+            usersDetailDTO.setEmail(jsonObject.get("email").toString());
+        if (jsonObject.get("expireTime") != null)
+            usersDetailDTO.setExpireTime(jsonObject.get("expireTime").toString());
+        if (jsonObject.get("userId") != null)
+            usersDetailDTO.setUserId(Long.valueOf(jsonObject.get("userId").toString()));
+        if (jsonObject.get("mobile") != null)
+            usersDetailDTO.setMobile(String.valueOf(jsonObject.get("mobile")));
+        if (jsonObject.get("openId") != null)
+            usersDetailDTO.setOpenId(String.valueOf(jsonObject.get("openId")));
+        if (jsonObject.get("username") != null)
+            usersDetailDTO.setUserName(String.valueOf(jsonObject.get("username")));
+        return usersDetailDTO;
+    }
 
     public static String getPostParams(HttpServletRequest request) {
         StringBuilder stringBuilder = new StringBuilder();
@@ -77,37 +156,23 @@ public final class SpringUtil implements BeanFactoryPostProcessor, ApplicationCo
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String authToken = authHeader.substring("Bearer ".length());
-            if(!StringUtils.isBlank(authToken) && authToken.length() > 32){
+            if(!StringUtils.isBlank(authToken) && authToken.length() >= 32){
                 return authToken;
             }
         }
         return null;
     }
 
-    /**
-     * 获取请求参数
-     * @return
-     */
-    public static Map<String, String> parseFrom() {
-        HttpServletRequest request =  ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-        Map<String, String> parameters = new HashMap<>();
-        Enumeration<String> parameterNames = request.getParameterNames();
-        while(parameterNames.hasMoreElements()) {
-            String parameterName = parameterNames.nextElement();
-            parameters.put(parameterName, request.getParameter(parameterName));
-        }
-        return parameters;
-    }
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException 
     {
-        SpringUtil.beanFactory = beanFactory;
+        SpringUtils.beanFactory = beanFactory;
     }
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException 
     {
-        SpringUtil.applicationContext = applicationContext;
+        SpringUtils.applicationContext = applicationContext;
     }
 
     /**
@@ -124,6 +189,15 @@ public final class SpringUtil implements BeanFactoryPostProcessor, ApplicationCo
         return (T) beanFactory.getBean(name);
     }
 
+    @SuppressWarnings("unchecked")
+    public static String[]  getBeans() throws BeansException
+    {
+        return applicationContext.getBeanDefinitionNames();
+    }
+    @SuppressWarnings("unchecked")
+    public static <T> T getBeanByName(String name) throws BeansException {
+        return (T) applicationContext.getBean(name);
+    }
     /**
      * 获取类型为requiredType的对象
      *

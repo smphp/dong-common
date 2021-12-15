@@ -1,18 +1,19 @@
 package com.dong.common.core.web.page;
 
+
 import com.dong.common.core.utils.ServletUtils;
 
 /**
  * 表格数据处理
  * 
- * @author dong
+ * @author wdzk
  */
 public class TableSupport
 {
     /**
      * 当前记录起始索引
      */
-    public static final String PAGE_NUM = "pageNum";
+    public static final String PAGE_NUM = "pageNo";
 
     /**
      * 每页显示记录数
@@ -35,7 +36,7 @@ public class TableSupport
     public static PageDomain getPageDomain()
     {
         PageDomain pageDomain = new PageDomain();
-        pageDomain.setPageNum(ServletUtils.getParameterToInt(PAGE_NUM));
+        pageDomain.setPageNo(ServletUtils.getParameterToInt(PAGE_NUM));
         pageDomain.setPageSize(ServletUtils.getParameterToInt(PAGE_SIZE));
         pageDomain.setOrderByColumn(ServletUtils.getParameter(ORDER_BY_COLUMN));
         pageDomain.setIsAsc(ServletUtils.getParameter(IS_ASC));
